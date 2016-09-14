@@ -39,6 +39,7 @@ import pwndbg.commands.shell
 import pwndbg.commands.start
 import pwndbg.commands.telescope
 import pwndbg.commands.theme
+import pwndbg.commands.trace
 import pwndbg.commands.vmmap
 import pwndbg.commands.windbg
 import pwndbg.commands.xor
