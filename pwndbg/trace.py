@@ -16,6 +16,7 @@ import pwndbg.commands
 import pwndbg.commands.nearpc
 import pwndbg.symbol
 import pwndbg.color.disasm as D
+import pwndbg.vmmap
 import re
 jumps = set((
     capstone.CS_GRP_CALL,
@@ -42,13 +43,33 @@ def trace_inst(args = None):
     if not ins:
         return None
 
+    p = re.compile("\s*[^ ]*\s*([^,]*),\s*([^<]*)([<].*[>])*")
     while ins:
         address = '%#x' % ins.address
         symbol = pwndbg.symbol.get(ins.address)
         asm = D.instruction(ins)
+
         if( any(re.match(regex, asm) for regex in args) ):
             print(address, symbol, asm)
-        ins = pwndbg.disasm.one(ins.next)
+
+            m = p.search(asm)
+
+            if(m):
+                for op in m.groups():
+                    if(op is None) :  continue
+                    elif(op.startswith("0")): continue
+                    elif(op.startswith("-")): continue
+                    elif(op.startswith("[")): continue
+                    elif(pwndbg.regs[op.strip()] != None):
+                        temp = pwndbg.regs[op.strip()]
+                        print('%03s: %s'%(op, hex(temp)))
+                    elif(op.startswith("<")):
+                        temp = pwndbg.memory.u(op.strip()[1:-1])
+                        print('%s: %s'%(op, hex(temp)))
+
+        ins_next = pwndbg.disasm.one(ins.next)
+        gdb.execute('nexti', from_tty=False, to_string=True)
+        ins = pwndbg.disasm.one(pwndbg.regs.pc)
 
     return False
 
